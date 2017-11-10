@@ -1,14 +1,14 @@
 package sbtfrontend
 
 import sbt._
+
 import scala.collection.JavaConverters._
 import java.io.File
 import java.util.jar.JarFile
 
-import net.liftweb.common._
-import com.github.eirslett.maven.plugins.frontend.lib.{
-  FrontendPluginFactory, ProxyConfig
-}
+import com.github.eirslett.maven.plugins.frontend.lib.{FrontendPluginFactory, ProxyConfig}
+import net.liftweb.common.{Box, Failure, Empty}
+import net.liftweb.common.{Full => LiftFull}
 
 object Frontend {
   import FrontendPlugin.autoImport.FrontendKeys._
@@ -17,9 +17,9 @@ object Frontend {
 
   private def tryo[T](f: => T): Box[T] = {
     try {
-      Full(f)
+      LiftFull(f)
     } catch {
-      case e: Throwable => Failure(e.getMessage, Full(e), Empty)
+      case e: Throwable => Failure(e.getMessage, LiftFull(e), Empty)
     }
   }
 

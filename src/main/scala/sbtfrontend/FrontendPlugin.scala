@@ -2,13 +2,12 @@ package sbtfrontend
 
 import sbt._
 import sbt.Keys._
-
 import java.util.jar.JarFile
-import scala.util.control.NonFatal
 
-import org.slf4j.impl.StaticLoggerBinder
-import net.liftweb.common.{ Failure, Full }
+import scala.util.control.NonFatal
+import net.liftweb.common.{Failure, Full}
 import com.github.eirslett.maven.plugins.frontend.lib._
+import org.slf4j.impl.SbtStaticLoggerBinder
 
 object NodePackageManager extends Enumeration {
   type NodePackageManager = Value
@@ -16,9 +15,9 @@ object NodePackageManager extends Enumeration {
 }
 
 object Defaults {
-  val nodeVersion = "v6.10.1"
-  val npmVersion = "3.10.10"
-  val yarnVersion = "v0.27.5"
+  val nodeVersion = "v8.8.1"
+  val npmVersion = "5.5.1"
+  val yarnVersion = "v1.3.2"
   val nodeDownloadRoot = NodeInstaller.DEFAULT_NODEJS_DOWNLOAD_ROOT
   val npmDownloadRoot = NPMInstaller.DEFAULT_NPM_DOWNLOAD_ROOT
   val yarnDownloadRoot = YarnInstaller.DEFAULT_YARN_DOWNLOAD_ROOT
@@ -81,7 +80,7 @@ object FrontendPlugin extends AutoPlugin {
           new FrontendPluginFactory(nodeWorkingDirectory.value, nodeInstallDirectory.value)
         },
         nodeInstall := {
-          StaticLoggerBinder.sbtLogger = streams.value.log
+          SbtStaticLoggerBinder.sbtLogger = streams.value.log
           Frontend.nodeInstall(
             frontendFactory.value,
             nodePackageManager.value,
@@ -97,21 +96,22 @@ object FrontendPlugin extends AutoPlugin {
             case _ =>
           }
         },
-        npm <<= FrontendProxyInputTask(npm, Frontend.npm _),
-        yarn <<= FrontendProxyInputTask(yarn, Frontend.yarn _),
-        bower <<= FrontendProxyInputTask(bower, Frontend.bower _),
-        grunt <<= FrontendInputTask(grunt, Frontend.grunt _),
-        gulp <<= FrontendInputTask(gulp, Frontend.gulp _),
-        jspm <<= FrontendInputTask(jspm, Frontend.jspm _),
-        karma <<= FrontendInputTask(karma, Frontend.karma _),
-        webpack <<= FrontendInputTask(webpack, Frontend.webpack _),
-        ember <<= FrontendInputTask(ember, Frontend.ember _),
+        npm := { FrontendProxyInputTask(npm, Frontend.npm _) },
+        yarn := { FrontendProxyInputTask(yarn, Frontend.yarn _) },
+        bower := { FrontendProxyInputTask(bower, Frontend.bower _) },
+        grunt := { FrontendInputTask(grunt, Frontend.grunt _) },
+        gulp := { FrontendInputTask(gulp, Frontend.gulp _) },
+        jspm := { FrontendInputTask(jspm, Frontend.jspm _) },
+        karma := { FrontendInputTask(karma, Frontend.karma _) },
+        webpack := { FrontendInputTask(webpack, Frontend.webpack _) },
+        ember := { FrontendInputTask(ember, Frontend.ember _) },
         webjars := {
+          val tvalue = target.value
           for {
             file <- (dependencyClasspath in Compile).value.map(_.data)
             jar <- tryo(new JarFile(file))
           } {
-            Frontend.extractWebjarAssets(jar, target.value / "webjars")
+            Frontend.extractWebjarAssets(jar, tvalue / "webjars")
           }
         },
         frontendCleanDeps := {
@@ -126,7 +126,7 @@ object FrontendPlugin extends AutoPlugin {
         },
         onLoad in Global := {
           val onLoadFunc = (s: State) => {
-            StaticLoggerBinder.sbtLogger = s.log
+            SbtStaticLoggerBinder.sbtLogger = s.log
 
             // install node and npm/yarn
             Frontend.nodeInstall(

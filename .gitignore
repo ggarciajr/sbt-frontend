@@ -1,5 +1,6 @@
 *.class
 *.log
+.envrc
 
 # sbt specific
 dist/*
